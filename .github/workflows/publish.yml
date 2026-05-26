@@ -32,4 +32,5 @@ jobs:
         with:
           packages-dir: dist/
           password: ${{ secrets.PYPI_TOKEN }}
-          username: __token__
+          user: __token__
+          skip-existing: true
