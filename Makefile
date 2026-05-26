@@ -1,4 +1,4 @@
-.PHONY: install test lint typecheck build clean
+.PHONY: install test lint typecheck build clean publish fullcheck
 
 install:
 	pip install -e ".[dev,taxonomy,presidio]"
@@ -19,5 +19,9 @@ clean:
 	rm -rf dist/ build/ *.egg-info .pytest_cache .ruff_cache .mypy_cache htmlcov
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+publish:
+	hatch build
+	twine upload dist/* --username __token__ --password $$PYPI_TOKEN
 
 fullcheck: lint typecheck test

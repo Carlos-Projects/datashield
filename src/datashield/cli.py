@@ -469,4 +469,5 @@ def _render_report(report: ScanReport, format: str, output: str | None = None) -
 
 
 def main() -> None:
+    """Entry point for `python -m datashield`."""
     app()
