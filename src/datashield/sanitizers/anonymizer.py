@@ -5,23 +5,23 @@ from typing import Any
 
 from datashield.scanner import BaseSanitizer, Finding, SanitizedRecord
 
-_ANONYMIZATION_MAP: dict[str, str] = {}
-
-
-def _anonymize_value(value: str) -> str:
-    if value in _ANONYMIZATION_MAP:
-        return _ANONYMIZATION_MAP[value]
-    if value.startswith("ANON_"):
-        return value
-    prefix = value[:3] if len(value) >= 3 else value
-    suffix = hashlib.sha256(value.encode()).hexdigest()[:8]
-    anon = f"ANON_{prefix}_{suffix}"
-    _ANONYMIZATION_MAP[value] = anon
-    return anon
-
 
 class Anonymizer(BaseSanitizer):
     name = "anonymizer"
+
+    def __init__(self) -> None:
+        self._map: dict[str, str] = {}
+
+    def _anonymize_value(self, value: str) -> str:
+        if value in self._map:
+            return self._map[value]
+        if value.startswith("ANON_"):
+            return value
+        prefix = value[:3] if len(value) >= 3 else value
+        suffix = hashlib.sha256(value.encode()).hexdigest()[:8]
+        anon = f"ANON_{prefix}_{suffix}"
+        self._map[value] = anon
+        return anon
 
     async def sanitize(
         self, records: list[dict[str, Any]], findings: list[Finding] | None = None
@@ -36,7 +36,7 @@ class Anonymizer(BaseSanitizer):
                 if finding.field_path and finding.field_path in sanitized:
                     val = sanitized[finding.field_path]
                     if isinstance(val, str):
-                        sanitized[finding.field_path] = _anonymize_value(val)
+                        sanitized[finding.field_path] = self._anonymize_value(val)
                         modified.append(finding.field_path)
             results.append(
                 SanitizedRecord(

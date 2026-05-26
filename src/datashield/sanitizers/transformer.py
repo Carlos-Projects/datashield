@@ -10,7 +10,7 @@ _TRANSFORM_FUNCTIONS: dict[DataCategory, Callable[[str], str]] = {
     DataCategory.PII: lambda v: hashlib.sha256(v.encode()).hexdigest()[:16],
     DataCategory.CREDENTIAL: lambda _: "[REDACTED]",
     DataCategory.SECRET: lambda _: "[REDACTED]",
-    DataCategory.MEDICAL: lambda v: f"MED_{hashlib.md5(v.encode()).hexdigest()[:8]}",
+    DataCategory.MEDICAL: lambda v: f"MED_{hashlib.sha256(v.encode()).hexdigest()[:12]}",
     DataCategory.FINANCIAL: lambda v: v[:4] + "XXXX" if len(v) >= 4 else "XXXX",
     DataCategory.LOCATION: lambda v: v[:3] + "***" if len(v) >= 3 else "***",
     DataCategory.PERSONAL: lambda v: hashlib.sha256(v.encode()).hexdigest()[:12],

@@ -19,8 +19,7 @@ class CryptoUtils:
     def hash_with_salt(value: str, salt: str | None = None) -> tuple[str, str]:
         if salt is None:
             salt = secrets.token_hex(16)
-        salted = salt + value
-        hashed = hashlib.pbkdf2_hmac("sha256", salted.encode("utf-8"), salt.encode("utf-8"), 100000)
+        hashed = hashlib.pbkdf2_hmac("sha256", value.encode("utf-8"), salt.encode("utf-8"), 100000)
         return hashed.hex(), salt
 
     @staticmethod
