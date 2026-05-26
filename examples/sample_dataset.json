@@ -1,0 +1,44 @@
+[
+  {
+    "user_id": 1,
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-123-4567",
+    "ssn": "123-45-6789",
+    "credit_card": "4111-1111-1111-1111",
+    "diagnosis": "Type 2 Diabetes",
+    "salary": 75000,
+    "address": "123 Main St, New York, NY 10001",
+    "ip_address": "192.168.1.100",
+    "api_key": "ds_test_key_abcdefghijklmnopqrstuvwxyz1234567890",
+    "notes": "Patient has shown significant improvement with medication."
+  },
+  {
+    "user_id": 2,
+    "name": "Jane Smith",
+    "email": "jane.smith@company.org",
+    "phone": "+44-20-7946-0958",
+    "ssn": "987-65-4321",
+    "credit_card": "5500-0000-0000-0004",
+    "diagnosis": "Hypertension",
+    "salary": 95000,
+    "address": "456 Oak Ave, Los Angeles, CA 90001",
+    "ip_address": "10.0.0.50",
+    "api_key": "AKIAIOSFODNN7EXAMPLE",
+    "notes": "Follow-up appointment scheduled for next month."
+  },
+  {
+    "user_id": 3,
+    "name": "Bob Wilson",
+    "email": "bob.wilson@testmail.com",
+    "phone": "+1-555-987-6543",
+    "ssn": "456-78-9012",
+    "credit_card": "4111-1111-1111-1111",
+    "diagnosis": "Asthma",
+    "salary": 62000,
+    "address": "789 Pine Rd, Chicago, IL 60601",
+    "ip_address": "172.16.0.1",
+    "api_key": "ghp_abcdefghijklmnopqrstuvwxyz0123456789",
+    "notes": "Prescription renewed for albuterol inhaler."
+  }
+]

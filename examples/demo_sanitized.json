@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "timestamp": "2026-05-26T00:00:00",
+    "total_original": 3,
+    "total_removed": 0,
+    "total_modified": 24,
+    "techniques_applied": ["anonymizer"]
+  },
+  "records": [
+    {
+      "index": 0,
+      "sanitized": {
+        "user_id": 1,
+        "name": "ANON_Joh_a1b2c3d4",
+        "email": "ANON_joh_e5f6g7h8",
+        "phone": "ANON_+1-_i9j0k1l2",
+        "ssn": "ANON_123_m3n4o5p6",
+        "credit_card": "ANON_411_q7r8s9t0",
+        "diagnosis": "ANON_Typ_u1v2w3x4",
+        "salary": 75000,
+        "address": "ANON_123_y5z6a7b8",
+        "ip_address": "ANON_192_c9d0e1f2",
+        "api_key": "ANON_sk__g3h4i5j6",
+        "notes": "ANON_Pat_k7l8m9n0"
+      },
+      "removed_fields": [],
+      "modified_fields": ["name", "email", "phone", "ssn", "credit_card", "diagnosis", "address", "ip_address", "api_key", "notes"]
+    }
+  ]
+}
