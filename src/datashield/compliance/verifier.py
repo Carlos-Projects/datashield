@@ -36,6 +36,7 @@ class ComplianceVerifier:
 
     def _count_pii_fields(self, data: list[dict[str, Any]]) -> int:
         import asyncio
+        import logging
 
         from datashield.detectors import PIIDetector
 
@@ -43,5 +44,6 @@ class ComplianceVerifier:
             detector = PIIDetector()
             findings = asyncio.run(detector.detect(data))
             return len(findings)
-        except RuntimeError:
+        except (RuntimeError, OSError) as e:
+            logging.getLogger(__name__).warning("Could not count PII fields: %s", e)
             return 0

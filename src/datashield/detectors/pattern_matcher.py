@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import regex
@@ -12,6 +13,10 @@ from datashield.scanner import (
     Finding,
     Severity,
 )
+
+_RE_TIMEOUT = 5.0
+
+logger = logging.getLogger(__name__)
 
 _PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]] = [
     (
@@ -136,7 +141,7 @@ _PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]] = [
     ),
     (
         "street_address",
-        r"\b\d{1,5}\s+[A-Za-z0-9\s,]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct)\b",
+        r"\b\d{1,5}\s+(?>[A-Za-z0-9\s,]+)(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Way|Court|Ct)\b",
         Severity.MEDIUM,
         Confidence.LOW,
         DataCategory.LOCATION,
@@ -206,7 +211,7 @@ class PatternMatcher(BaseDetector):
         findings: list[Finding] = []
         for name, pattern, severity, confidence, category, title in self.patterns:
             try:
-                for match in regex.finditer(pattern, value, overlapped=True):
+                for match in regex.finditer(pattern, value, overlapped=True, timeout=_RE_TIMEOUT):
                     findings.append(
                         Finding(
                             detector=self.name,
@@ -223,6 +228,10 @@ class PatternMatcher(BaseDetector):
                             metadata={"pattern_name": name, "pattern": pattern},
                         )
                     )
-            except regex.error:
+            except regex.error as e:
+                logger.warning("Regex pattern '%s' failed: %s", name, e)
+                continue
+            except regex.TimeoutError:
+                logger.warning("Regex pattern '%s' timed out on field '%s'", name, field_path)
                 continue
         return findings

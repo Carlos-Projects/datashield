@@ -106,16 +106,15 @@ class GDPRCompliance:
 
     def _collect_findings(self, data: list[dict[str, Any]]) -> list[Finding]:
         import asyncio
+        import logging
 
         from datashield.detectors import PIIDetector
 
         detector = PIIDetector()
         try:
             return asyncio.run(detector.detect(data))
-        except RuntimeError:
-            import warnings
-
-            warnings.warn("Could not run PII detection for GDPR check", stacklevel=2)
+        except (RuntimeError, OSError) as e:
+            logging.getLogger(__name__).warning("Could not run PII detection for GDPR check: %s", e)
             return []
 
     def _check_encryption(self, data: list[dict[str, Any]]) -> dict[str, Any]:

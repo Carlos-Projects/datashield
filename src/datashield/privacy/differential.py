@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 from typing import Any
 
@@ -15,13 +16,15 @@ class DifferentialPrivacy:
         self.epsilon = epsilon
         self.delta = delta
         self.sensitivity = sensitivity
+        self._rng = np.random.default_rng()
 
     def apply(self, data: list[dict[str, Any]]) -> dict[str, Any]:
         if not data:
-            return {"data": data, "records_modified": 0, "noise_added": False}
+            return {"data": copy.deepcopy(data), "records_modified": 0, "noise_added": False}
 
+        result = copy.deepcopy(data)
         modified = 0
-        for record in data:
+        for record in result:
             for key, value in record.items():
                 if isinstance(value, (int, float)):
                     noise = self._laplace_noise()
@@ -34,7 +37,7 @@ class DifferentialPrivacy:
                         modified += 1
 
         return {
-            "data": data,
+            "data": result,
             "records_modified": modified,
             "noise_added": True,
             "epsilon": self.epsilon,
@@ -43,28 +46,28 @@ class DifferentialPrivacy:
 
     def _laplace_noise(self) -> float:
         scale = self.sensitivity / self.epsilon
-        return np.random.laplace(0, scale)
+        return float(self._rng.laplace(0, scale))
 
     def _gaussian_noise(self) -> float:
         sigma = math.sqrt(2 * math.log(1.25 / self.delta)) * self.sensitivity / self.epsilon
-        return float(np.random.normal(0, sigma))
+        return float(self._rng.normal(0, sigma))
 
     def _noisify_string(self, value: str) -> str:
         chars = list(value)
         noise_prob = 1.0 / (len(value) + 1)
         modified = False
         for i in range(len(chars)):
-            if np.random.random() < noise_prob:
+            if self._rng.random() < noise_prob:
                 c = chars[i]
                 if c.isalpha():
-                    shift = np.random.choice([-1, 1])
+                    shift = self._rng.choice([-1, 1])
                     chars[i] = chr(
                         (ord(c) - ord("a" if c.islower() else "A") + shift) % 26
                         + ord("a" if c.islower() else "A")
                     )
                     modified = True
                 elif c.isdigit():
-                    chars[i] = str((int(c) + np.random.randint(1, 10)) % 10)
+                    chars[i] = str((int(c) + self._rng.integers(1, 10)) % 10)
                     modified = True
         return "".join(chars) if modified else value
 

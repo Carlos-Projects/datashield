@@ -5,9 +5,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
-from datashield.cli import app
+from datashield.cli import _load_data, app
 
 runner = CliRunner()
 
@@ -98,3 +99,118 @@ class TestCLI:
         runner.invoke(app, ["report", sample_json, "--output", out_path, "--format", "json"])
         assert Path(out_path).exists()
         Path(out_path).unlink(missing_ok=True)
+
+    def test_version_flag(self):
+        result = runner.invoke(app, ["--version"])
+        assert result.exit_code == 0
+        assert "DataShield" in result.stdout
+
+    def test_policies_command(self, sample_json):
+        with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as f:
+            out_path = f.name
+        runner.invoke(app, ["policies", sample_json, "--output", out_path])
+        assert Path(out_path).exists()
+        content = Path(out_path).read_text()
+        assert "generated_by: datashield" in content
+        Path(out_path).unlink(missing_ok=True)
+
+    def test_scan_with_threshold(self, sample_json):
+        result = runner.invoke(app, ["scan", sample_json, "--threshold", "0.8"])
+        assert result.exit_code in (0, 1)
+
+    def test_scan_with_exclude(self, sample_json):
+        result = runner.invoke(app, ["scan", sample_json, "--exclude", "email,ssn"])
+        assert result.exit_code in (0, 1)
+
+    def test_scan_with_path_traversal_output(self, sample_json):
+        result = runner.invoke(
+            app,
+            [
+                "scan",
+                sample_json,
+                "--format",
+                "json",
+                "--output",
+                "../../tmp/../../etc/passwd",
+            ],
+        )
+        assert result.exit_code != 0
+
+    def test_load_data_invalid_type(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('"just_a_string"')
+            path = f.name
+        with pytest.raises(typer.Exit):
+            _load_data(path)
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_empty_json_object(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("{}")
+            path = f.name
+        data = _load_data(path)
+        assert data == [{}]
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_empty_json_array(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("[]")
+            path = f.name
+        data = _load_data(path)
+        assert data == []
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_malformed_json(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("{invalid json!!!}")
+            path = f.name
+        with pytest.raises(typer.Exit):
+            _load_data(path)
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_empty_file(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            path = f.name
+        with pytest.raises(typer.Exit):
+            _load_data(path)
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_binary_file(self):
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".json", delete=False) as f:
+            f.write(b"\x89PNG\r\n\x1a\n")
+            path = f.name
+        with pytest.raises(typer.Exit):
+            _load_data(path)
+        Path(path).unlink(missing_ok=True)
+
+    def test_load_data_csv_formula_injection(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write('name,notes\nAlice,"=HYPERLINK(""http://evil.com"")"\nBob,+SUM(1,1)\n')
+            path = f.name
+        data = _load_data(path)
+        assert "=HYPERLINK" in data[0]["notes"]
+        assert "+SUM" in data[1]["notes"]
+        Path(path).unlink(missing_ok=True)
+
+    def test_scan_with_all_detectors_disabled(self, sample_json):
+        result = runner.invoke(
+            app,
+            [
+                "scan",
+                sample_json,
+                "--no-pii",
+                "--no-secrets",
+                "--no-classifier",
+                "--no-patterns",
+            ],
+        )
+        assert result.exit_code == 0
+
+    def test_scan_csv_input(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write("name,email\nAlice,alice@test.com\nBob,bob@test.com\n")
+            path = f.name
+        runner.invoke(app, ["sanitize", path, path + ".out"])
+        assert Path(path + ".out").exists()
+        Path(path + ".out").unlink(missing_ok=True)
+        Path(path).unlink(missing_ok=True)

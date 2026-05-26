@@ -54,7 +54,11 @@ def _load_data(path: str, fmt: str | None = None) -> list[dict[str, Any]]:
         raise typer.Exit(1)
 
     ext = (fmt or p.suffix).lstrip(".").lower()
-    raw = p.read_text(encoding="utf-8")
+    try:
+        raw = p.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        console.print(f"[red]File is not valid UTF-8 text:[/red] {path}")
+        raise typer.Exit(1) from None
 
     if ext in ("csv",):
         return _load_csv(raw)

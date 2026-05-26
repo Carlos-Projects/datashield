@@ -116,6 +116,7 @@ class HIPAACompliance:
 
     def _collect_findings(self, data: list[dict[str, Any]]) -> list[Finding]:
         import asyncio
+        import logging
 
         from datashield.detectors import PIIDetector, SensitiveClassifier
 
@@ -125,8 +126,6 @@ class HIPAACompliance:
             cls = SensitiveClassifier()
             all_findings.extend(asyncio.run(pii.detect(data)))
             all_findings.extend(asyncio.run(cls.detect(data)))
-        except RuntimeError:
-            import warnings
-
-            warnings.warn("Could not run detectors for HIPAA check", stacklevel=2)
+        except (RuntimeError, OSError) as e:
+            logging.getLogger(__name__).warning("Could not run detectors for HIPAA check: %s", e)
         return all_findings

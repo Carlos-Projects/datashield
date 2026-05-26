@@ -27,3 +27,24 @@ class TestComplianceVerifier:
         sanitized = [{"id": 1}]
         result = verifier.compare(original, sanitized)
         assert result["fields_removed"] == 0
+
+    def test_verify_all_clean(self):
+        verifier = ComplianceVerifier()
+        results = verifier.verify_all([{"id": 1}])
+        assert len(results) == 2
+        assert all(r.regulation in ("GDPR", "HIPAA") for r in results)
+
+    def test_verify_all_with_pii(self):
+        verifier = ComplianceVerifier()
+        results = verifier.verify_all([{"email": "user@test.com", "ssn": "123-45-6789"}])
+        assert len(results) == 2
+        gdpr = next(r for r in results if r.regulation == "GDPR")
+        hipaa = next(r for r in results if r.regulation == "HIPAA")
+        assert not gdpr.compliant
+        assert not hipaa.compliant
+
+    def test_verify_all_empty(self):
+        verifier = ComplianceVerifier()
+        results = verifier.verify_all([])
+        assert len(results) == 2
+        assert verifier._results == results

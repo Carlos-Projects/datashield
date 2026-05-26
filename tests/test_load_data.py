@@ -64,3 +64,39 @@ class TestLoadData:
     def test_missing_file(self):
         with pytest.raises(typer.Exit):
             _load_data("/nonexistent/path.json")
+
+    def test_empty_jsonl(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+            f.write("")
+            path = f.name
+        data = _load_data(path)
+        assert data == []
+        Path(path).unlink(missing_ok=True)
+
+    def test_whitespace_only_jsonl(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
+            f.write("\n\n\n")
+            path = f.name
+        data = _load_data(path)
+        assert data == []
+        Path(path).unlink(missing_ok=True)
+
+    def test_json_with_enum_values(self):
+        from datashield.scanner import Severity
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump([{"severity": Severity.CRITICAL, "score": 100}], f)
+            path = f.name
+        data = _load_data(path)
+        assert data[0]["severity"] == "critical"
+        Path(path).unlink(missing_ok=True)
+
+    def test_deeply_nested_json(self):
+        nested = {"a": {"b": {"c": {"d": {"e": "deep"}}}}}
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(nested, f)
+            path = f.name
+        data = _load_data(path)
+        assert len(data) == 1
+        assert data[0]["a"]["b"]["c"]["d"]["e"] == "deep"
+        Path(path).unlink(missing_ok=True)
