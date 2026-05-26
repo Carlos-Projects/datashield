@@ -18,15 +18,22 @@ DataShield detects and removes sensitive information (PII, secrets, medical, fin
 |---------|-------------|
 | **PII Detection** | Detects emails, phones, SSNs, passports, national IDs, and more |
 | **Secret Scanning** | Finds API keys, tokens, passwords, certificates, and credentials |
-| **Sensitive Classification** | Classifies medical, financial, legal, and personal data |
-| **Anonymization** | Replaces sensitive values with anonymized tokens |
+| **Sensitive Classification** | Classifies medical, financial, legal, and personal data by keywords |
+| **Presidio Detection** | Optional ML-powered PII detection via Microsoft Presidio |
+| **Anonymization** | Replaces sensitive values with anonymized tokens (deterministic) |
 | **Redaction** | Replaces sensitive content with `[REDACTED]` |
 | **Data Minimization** | Removes unnecessary fields while preserving required ones |
 | **Transformation** | Applies category-specific transforms (hashing, masking, etc.) |
-| **Differential Privacy** | Adds calibrated noise with configurable epsilon |
+| **Differential Privacy** | Adds calibrated Laplace/Gaussian noise with configurable epsilon |
 | **k-Anonymity** | Ensures each record is indistinguishable from k-1 others |
-| **Compliance Verification** | Checks GDPR and HIPAA compliance |
+| **Epsilon Calculator** | Estimates optimal privacy budget based on dataset characteristics |
+| **GDPR Compliance** | Checks Art. 5, 9, 17, 25, 32, 35 compliance |
+| **HIPAA Compliance** | Checks Privacy Rule, Security Rule, Minimum Necessary |
+| **MCPGuard Policies** | Generates MCPGuard-compatible YAML security policies |
+| **mcp-taxonomy Adapter** | Normalizes findings to the canonical MCP security taxonomy |
+| **MCPscop Integration** | Forwards findings to MCPscop dashboard via webhook |
 | **HTML/JSON/Console Reports** | Rich reports for auditing and sharing |
+| **Multi-format Input** | Supports JSON, JSONL, and CSV datasets |
 
 ## Installation
 
@@ -34,9 +41,14 @@ DataShield detects and removes sensitive information (PII, secrets, medical, fin
 pip install datashield-ai
 ```
 
-With Presidio support (enhanced PII detection):
+With Presidio support (enhanced ML-based PII detection):
 ```bash
 pip install datashield-ai[presidio]
+```
+
+With taxonomy integration:
+```bash
+pip install datashield-ai[taxonomy]
 ```
 
 ## Quick Start
@@ -54,6 +66,9 @@ datashield anonymize dataset.json anonymized.json --epsilon 0.5 --k 5
 # Verify compliance
 datashield verify sanitized.json
 
+# Generate MCPGuard policy
+datashield policies dataset.json -o mcpguard_policy.yaml
+
 # Generate HTML report
 datashield report dataset.json -o report.html
 ```
@@ -63,13 +78,21 @@ datashield report dataset.json -o report.html
 ### Scan a dataset
 
 ```bash
-# Basic scan
+# Basic scan (auto-detects format from extension)
 datashield scan data.json
+datashield scan data.jsonl
+datashield scan data.csv
 
-# Scan with specific detectors
-datashield scan data.json --pii true --secrets true --classifier false
+# Scan with confidence threshold
+datashield scan data.json --threshold 0.6
 
-# Output JSON report
+# Exclude certain fields
+datashield scan data.json --exclude metadata,internal_id
+
+# Forward findings to MCPscop dashboard
+datashield scan data.json --mcpscop
+
+# Output as JSON
 datashield scan data.json --format json -o scan_report.json
 ```
 
@@ -104,6 +127,16 @@ datashield verify sanitized.json
 datashield verify sanitized.json --original original.json
 ```
 
+### Generate MCPGuard policies
+
+```bash
+# Generate YAML security policy from dataset findings
+datashield policies dataset.json -o mcpguard_policy.yaml
+
+# Specify custom MCPGuard target
+datashield policies dataset.json --target http://my-mcp-server:8000
+```
+
 ### Generate reports
 
 ```bash
@@ -114,13 +147,27 @@ datashield report data.json -o report.html
 datashield report data.json -o report.json --format json
 ```
 
+## Configuration
+
+DataShield supports configuration via environment variables (prefix `DATASHIELD_`) or a `.env` file:
+
+```bash
+# .env
+DATASHIELD_THRESHOLD=0.5
+DATASHIELD_EXCLUDE_FIELDS=metadata,debug
+DATASHIELD_DEFAULT_EPSILON=0.5
+DATASHIELD_DEFAULT_K=10
+DATASHIELD_MCPSCOP_URL=http://mcpscop:8080
+DATASHIELD_MCPSCOP_API_KEY=your-key
+```
+
 ## Integration with Ecosystem
 
 | Project | Integration |
 |---------|-------------|
-| [MCPGuard](https://github.com/Carlos-Projects/mcpguard) | Generates MCPGuard-compatible data policies |
-| [MCPscop](https://github.com/Carlos-Projects/mcpscope) | Reports consumable by MCPscop dashboard |
-| [mcp-taxonomy](https://github.com/Carlos-Projects/mcp-taxonomy) | Uses shared taxonomy for cross-project normalization |
+| [MCPGuard](https://github.com/Carlos-Projects/mcpguard) | Generates MCPGuard-compatible YAML data policies via `datashield policies` |
+| [MCPscop](https://github.com/Carlos-Projects/mcpscope) | Forwards normalized findings via `--mcpscop` flag or `MCPscopClient` API |
+| [mcp-taxonomy](https://github.com/Carlos-Projects/mcp-taxonomy) | Normalizes findings to canonical taxonomy via `datashield_finding_to_taxonomy()` |
 | [palisade-scanner](https://github.com/Carlos-Projects/palisade-scanner) | Same detector pattern and architecture |
 
 ## API
@@ -128,7 +175,9 @@ datashield report data.json -o report.json --format json
 ```python
 import asyncio
 from datashield.scanner import Scanner
-from datashield.detectors import PIIDetector, SecretScanner
+from datashield.detectors import PIIDetector, SecretScanner, PresidioDetector
+from datashield.taxonomy import datashield_finding_to_taxonomy
+from datashield.policies.mcpguard import MCPGuardPolicyGenerator
 
 # Create scanner with detectors
 scanner = Scanner(detectors=[PIIDetector(), SecretScanner()])
@@ -139,6 +188,16 @@ report = asyncio.run(scanner.scan(data))
 
 print(f"Risk score: {report.risk_score}")
 print(f"Findings: {report.total_findings}")
+
+# Normalize to mcp-taxonomy
+for finding in report.findings:
+    event = datashield_finding_to_taxonomy(finding)
+    print(f"  → {event.attack_category.value}: {event.title}")
+
+# Generate MCPGuard policy
+gen = MCPGuardPolicyGenerator()
+policy = gen.from_findings(report.findings)
+print(gen.to_yaml(policy))
 ```
 
 ## Project Structure
@@ -146,13 +205,16 @@ print(f"Findings: {report.total_findings}")
 ```
 datashield/
 ├── src/datashield/
-│   ├── cli.py              # Typer CLI interface
-│   ├── scanner.py           # Core scanning engine + models
+│   ├── cli.py              # Typer CLI interface (6 commands)
+│   ├── scanner.py           # Core scanning engine + Pydantic models
+│   ├── config.py            # pydantic-settings configuration
+│   ├── taxonomy.py          # mcp-taxonomy adapter
 │   ├── detectors/           # Detection modules
 │   │   ├── pii_detector.py
 │   │   ├── secret_scanner.py
 │   │   ├── sensitive_classifier.py
-│   │   └── pattern_matcher.py
+│   │   ├── pattern_matcher.py
+│   │   └── presidio_detector.py   # Optional ML-based PII detection
 │   ├── sanitizers/          # Sanitization modules
 │   │   ├── anonymizer.py
 │   │   ├── redactor.py
@@ -170,9 +232,13 @@ datashield/
 │   │   ├── console.py       # Rich console output
 │   │   ├── json.py
 │   │   └── html.py          # Jinja2 HTML reports
+│   ├── policies/            # Policy generation
+│   │   └── mcpguard.py      # MCPGuard YAML policy generator
+│   ├── integrations/        # Ecosystem integrations
+│   │   └── mcpscop.py       # MCPscop webhook client
 │   └── utils/
 │       └── crypto.py        # Cryptographic utilities
-└── tests/                   # 60+ tests
+└── tests/                   # 150+ tests
 ```
 
 ## Compliance

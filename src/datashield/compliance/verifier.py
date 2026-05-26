@@ -24,7 +24,7 @@ class ComplianceVerifier:
     ) -> dict[str, Any]:
         original_pii = self._count_pii_fields(original)
         sanitized_pii = self._count_pii_fields(sanitized)
-        reduction = 0
+        reduction: float = 0.0
         if original_pii > 0:
             reduction = round((original_pii - sanitized_pii) / original_pii * 100, 1)
         return {

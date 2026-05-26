@@ -42,3 +42,24 @@ class TestCryptoUtils:
         t1 = CryptoUtils.deterministic_token(data)
         t2 = CryptoUtils.deterministic_token(data)
         assert t1 == t2
+
+    def test_deterministic_token_with_key(self):
+        data = {"a": 1, "b": 2}
+        t1 = CryptoUtils.deterministic_token(data, key="secret")
+        t2 = CryptoUtils.deterministic_token(data, key="secret")
+        assert t1 == t2
+        t3 = CryptoUtils.deterministic_token(data, key="other")
+        assert t1 != t3
+
+    def test_sha256_file_hash(self):
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
+            f.write(b"test content for hashing")
+            path = f.name
+        h = CryptoUtils.sha256_file_hash(path)
+        import os
+
+        os.unlink(path)
+        assert isinstance(h, str)
+        assert len(h) == 64
