@@ -16,10 +16,33 @@ from datashield.reporters import ConsoleReporter, HTMLReporter, JSONReporter
 from datashield.sanitizers import Anonymizer, Minimizer, Redactor, Transformer
 from datashield.scanner import BaseDetector, BaseSanitizer, SanitizeReport, Scanner, ScanReport
 
+
+def _version_callback(value: bool) -> None:
+    if value:
+        from datashield import __version__ as ver
+
+        console.print(f"DataShield v{ver}")
+        raise typer.Exit()
+
+
+def _main_callback(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        help="Show version and exit",
+        callback=_version_callback,
+        is_eager=True,
+    ),
+) -> None:
+    pass
+
+
 app = typer.Typer(
     name="datashield",
     help="DataShield — Data sanitization with privacy preservation for AI training",
     no_args_is_help=True,
+    callback=_main_callback,
 )
 console = Console()
 
