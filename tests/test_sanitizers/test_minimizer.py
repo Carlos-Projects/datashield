@@ -39,11 +39,11 @@ class TestMinimizer:
         results = await minimizer.sanitize(records, [pii_finding])
         assert results[0].sanitized.get("id") == 1
 
-    async def test_no_findings_removes_non_kept(self, minimizer):
+    async def test_no_findings_no_removals(self, minimizer):
         records = [{"unnecessary": "data", "id": 1, "name": "Alice"}]
         results = await minimizer.sanitize(records, [])
-        assert "unnecessary" in results[0].removed_fields
-        assert "id" in results[0].sanitized
+        assert "unnecessary" in results[0].sanitized
+        assert len(results[0].removed_fields) == 0
 
     async def test_empty_records(self, minimizer):
         results = await minimizer.sanitize([])

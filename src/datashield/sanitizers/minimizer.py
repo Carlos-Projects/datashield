@@ -63,8 +63,4 @@ class Minimizer(BaseSanitizer):
             if finding.category in self.minimize_categories and finding.field_path:
                 if finding.field_path in record:
                     min_fields.append(finding.field_path)
-        if not findings:
-            for key in record:
-                if key not in self.keep_fields:
-                    min_fields.append(key)
         return list(set(min_fields))

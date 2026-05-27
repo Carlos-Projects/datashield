@@ -8,14 +8,23 @@ import numpy as np
 
 
 class DifferentialPrivacy:
-    def __init__(self, epsilon: float = 1.0, delta: float = 1e-5, sensitivity: float = 1.0):
+    def __init__(
+        self,
+        epsilon: float = 1.0,
+        delta: float = 1e-5,
+        sensitivity: float = 1.0,
+        mechanism: str = "laplace",
+    ):
         if epsilon <= 0:
             raise ValueError("Epsilon must be positive")
         if delta <= 0 or delta >= 1:
             raise ValueError("Delta must be in (0, 1)")
+        if mechanism not in ("laplace", "gaussian"):
+            raise ValueError("Mechanism must be 'laplace' or 'gaussian'")
         self.epsilon = epsilon
         self.delta = delta
         self.sensitivity = sensitivity
+        self.mechanism = mechanism
         self._rng = np.random.default_rng()
 
     def apply(self, data: list[dict[str, Any]]) -> dict[str, Any]:
@@ -24,10 +33,11 @@ class DifferentialPrivacy:
 
         result = copy.deepcopy(data)
         modified = 0
+        noise_fn = self._gaussian_noise if self.mechanism == "gaussian" else self._laplace_noise
         for record in result:
             for key, value in record.items():
                 if isinstance(value, (int, float)):
-                    noise = self._laplace_noise()
+                    noise = noise_fn()
                     record[key] = value + noise
                     modified += 1
                 elif isinstance(value, str) and len(value) > 0:
@@ -42,6 +52,7 @@ class DifferentialPrivacy:
             "noise_added": True,
             "epsilon": self.epsilon,
             "delta": self.delta,
+            "mechanism": self.mechanism,
         }
 
     def _laplace_noise(self) -> float:

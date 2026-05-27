@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx
 
 from datashield.scanner import ScanReport
+
+logger = logging.getLogger(__name__)
 
 
 class MCPscopClient:
@@ -12,6 +15,11 @@ class MCPscopClient:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self._client = httpx.AsyncClient(timeout=30.0)
+        if not self.base_url.startswith("https://"):
+            logger.warning(
+                "MCPscop URL does not use HTTPS — data may be sent in cleartext: %s",
+                self.base_url,
+            )
 
     async def send_report(self, report: ScanReport) -> dict[str, Any]:
         from datashield.taxonomy import datashield_finding_to_taxonomy

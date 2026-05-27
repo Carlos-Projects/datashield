@@ -14,7 +14,16 @@ from datashield.config import settings
 from datashield.detectors import PatternMatcher, PIIDetector, SecretScanner, SensitiveClassifier
 from datashield.reporters import ConsoleReporter, HTMLReporter, JSONReporter
 from datashield.sanitizers import Anonymizer, Minimizer, Redactor, Transformer
-from datashield.scanner import BaseDetector, BaseSanitizer, SanitizeReport, Scanner, ScanReport
+from datashield.scanner import (
+    BaseDetector,
+    BaseSanitizer,
+    SanitizeReport,
+    Scanner,
+    ScanReport,
+)
+
+_CONF_WEIGHTS = {"high": 0.8, "medium": 0.5, "low": 0.2}
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@")
 
 
 def _version_callback(value: bool) -> None:
@@ -47,13 +56,33 @@ app = typer.Typer(
 console = Console()
 
 
-def _load_data(path: str, fmt: str | None = None) -> list[dict[str, Any]]:
+def _check_file_size(path: str, max_mb: int) -> None:
+    size = Path(path).stat().st_size
+    max_bytes = max_mb * 1024 * 1024
+    if size > max_bytes:
+        console.print(
+            f"[red]File too large:[/red] {size / 1024 / 1024:.1f} MB "
+            f"(max {max_mb} MB). Use --max-size to increase."
+        )
+        raise typer.Exit(1)
+
+
+def _sanitize_csv_value(val: str) -> str:
+    if val and val[0] in _CSV_FORMULA_PREFIXES:
+        return "'" + val
+    return val
+
+
+def _load_data(
+    path: str, fmt: str | None = None, max_size_mb: int | None = None
+) -> list[dict[str, Any]]:
     p = Path(path)
     if not p.exists():
         console.print(f"[red]File not found:[/red] {path}")
         raise typer.Exit(1)
 
     ext = (fmt or p.suffix).lstrip(".").lower()
+    _check_file_size(path, max_size_mb or settings.max_size_mb)
     try:
         raw = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:
@@ -61,7 +90,11 @@ def _load_data(path: str, fmt: str | None = None) -> list[dict[str, Any]]:
         raise typer.Exit(1) from None
 
     if ext in ("csv",):
-        return _load_csv(raw)
+        data = _load_csv(raw)
+        for record in data:
+            for k, v in record.items():
+                record[k] = _sanitize_csv_value(v) if isinstance(v, str) else v
+        return data
     if ext in ("jsonl", "ndjson"):
         return _load_jsonl(raw)
     return _load_json(raw)
@@ -131,20 +164,6 @@ def _build_scanner(
     return Scanner(detectors=detectors, sanitizers=sanitizers)
 
 
-def _filter_findings(findings: list[Any], threshold: float, exclude: list[str]) -> list[Any]:
-    filtered: list[Any] = []
-    for f in findings:
-        if threshold > 0 and hasattr(f, "confidence") and hasattr(f.confidence, "value"):
-            conf_weights = {"high": 0.8, "medium": 0.5, "low": 0.2}
-            if conf_weights.get(f.confidence.value, 0) < threshold:
-                continue
-        if exclude and hasattr(f, "field_path") and f.field_path:
-            if any(f.field_path.startswith(e) for e in exclude):
-                continue
-        filtered.append(f)
-    return filtered
-
-
 async def _send_to_mcpscop(report: ScanReport, url: str, api_key: str | None) -> None:
     from datashield.integrations.mcpscop import MCPscopClient
 
@@ -191,11 +210,7 @@ def scan(
         enable_classifier=classifier,
         enable_patterns=patterns,
     )
-    report = asyncio.run(scanner.scan(data))
-    report.findings = _filter_findings(report.findings, threshold, exclude_list)
-    report.total_findings = len(report.findings)
-    report.risk_score = scanner._compute_risk_score(report.findings)
-    report.risk_category = scanner._risk_category(report.risk_score)
+    report = asyncio.run(scanner.scan(data, threshold=threshold, exclude=exclude_list))
     _render_report(report, format, output)
     if mcpscop and settings.mcpscop_url:
         asyncio.run(_send_to_mcpscop(report, settings.mcpscop_url, settings.mcpscop_api_key))
@@ -247,31 +262,32 @@ def sanitize(
         enable_minimizer=minimize,
         enable_transformer=transform,
     )
-    scan_report = asyncio.run(scanner.scan(data))
-    scan_report.findings = _filter_findings(scan_report.findings, threshold, exclude_list)
-    sanitized_records = []
-    for i, record in enumerate(data):
-        sanitized = dict(record)
-        modified_fields: list[str] = []
-        removed_fields: list[str] = []
-        record_findings = [
-            f for f in scan_report.findings if f.field_path in record or f.field_path is None
-        ]
-        for sanitizer in scanner.sanitizers:
-            result = asyncio.run(sanitizer.sanitize([sanitized], record_findings))
-            if result:
-                sanitized = result[0].sanitized
-                modified_fields.extend(result[0].modified_fields)
-                removed_fields.extend(result[0].removed_fields)
-        from datashield.scanner import SanitizedRecord
+    scan_report = asyncio.run(scanner.scan(data, threshold=threshold, exclude=exclude_list))
 
+    all_records = [dict(r) for r in data]
+    for sanitizer in scanner.sanitizers:
+        records_copy = [dict(r) for r in all_records]
+        result = asyncio.run(sanitizer.sanitize(records_copy, scan_report.findings))
+        for i, sr in enumerate(result):
+            if i < len(all_records):
+                all_records[i] = sr.sanitized
+
+    from datashield.scanner import SanitizedRecord
+
+    sanitized_records = []
+    for i, (original, sanitized) in enumerate(zip(data, all_records, strict=True)):
+        removed = [k for k in original if k not in sanitized]
+        modified = [k for k in sanitized if k in original and sanitized[k] != original[k]]
+        record_findings = [
+            f for f in scan_report.findings if f.field_path in original or f.field_path is None
+        ]
         sanitized_records.append(
             SanitizedRecord(
                 index=i,
-                original=record,
+                original=original,
                 sanitized=sanitized,
-                removed_fields=list(set(removed_fields)),
-                modified_fields=list(set(modified_fields)),
+                removed_fields=removed,
+                modified_fields=modified,
                 findings=record_findings,
             )
         )
@@ -417,8 +433,7 @@ def report(
     """Generate a comprehensive privacy report for a dataset."""
     data = _load_data(file, input_format)
     scanner = _build_scanner(enable_pii=pii, enable_secrets=secrets)
-    scan_report = asyncio.run(scanner.scan(data))
-    scan_report.findings = [f for f in scan_report.findings if _passes_threshold(f, threshold)]
+    scan_report = asyncio.run(scanner.scan(data, threshold=threshold))
     _render_report(scan_report, format, output)
 
 
@@ -441,15 +456,6 @@ def policies(
     policy = gen.from_scan_report(scan_report, target_url=target_url)
     gen.save(output, policy)
     console.print(f"[green]MCPGuard policy written to:[/green] {output}")
-
-
-def _passes_threshold(finding: Any, threshold: float) -> bool:
-    if threshold <= 0:
-        return True
-    conf_weights = {"high": 0.8, "medium": 0.5, "low": 0.2}
-    if hasattr(finding, "confidence") and hasattr(finding.confidence, "value"):
-        return conf_weights.get(finding.confidence.value, 0) >= threshold
-    return True
 
 
 def _render_report(report: ScanReport, format: str, output: str | None = None) -> None:

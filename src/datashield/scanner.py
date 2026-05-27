@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+_CONF_WEIGHTS = {"high": 0.8, "medium": 0.5, "low": 0.2}
+
 
 class Severity(StrEnum):
     CRITICAL = "critical"
@@ -105,34 +107,60 @@ class ComplianceResult(BaseModel):
 class Scanner:
     def __init__(
         self,
-        detectors: list[Any] | None = None,
-        sanitizers: list[Any] | None = None,
+        detectors: list[BaseDetector] | None = None,
+        sanitizers: list[BaseSanitizer] | None = None,
     ):
         self.detectors = detectors or []
         self.sanitizers = sanitizers or []
 
-    async def scan(self, data: list[dict[str, Any]] | dict[str, Any]) -> ScanReport:
+    async def scan(
+        self,
+        data: list[dict[str, Any]] | dict[str, Any],
+        threshold: float = 0.0,
+        exclude: list[str] | None = None,
+    ) -> ScanReport:
         records = data if isinstance(data, list) else [data]
         all_findings: list[Finding] = []
+        seen: set[tuple[str | None, str | None]] = set()
         for detector in self.detectors:
             results = await detector.detect(records)
-            all_findings.extend(results)
-        total = len(all_findings)
+            for f in results:
+                key = (f.field_path, f.value)
+                if key not in seen:
+                    seen.add(key)
+                    all_findings.append(f)
+
+        filtered = self._filter_findings(all_findings, threshold, exclude or [])
         severity_counts: dict[str, int] = {}
-        for f in all_findings:
+        for f in filtered:
             severity_counts[f.severity.value] = severity_counts.get(f.severity.value, 0) + 1
-        risk_score = self._compute_risk_score(all_findings)
+        risk_score = self.compute_risk_score(filtered)
         return ScanReport(
             source="scan",
             total_records=len(records),
-            total_findings=total,
-            findings=all_findings,
+            total_findings=len(filtered),
+            findings=filtered,
             risk_score=risk_score,
             risk_category=self._risk_category(risk_score),
             summary=severity_counts,
         )
 
-    def _compute_risk_score(self, findings: list[Finding]) -> float:
+    @staticmethod
+    def _filter_findings(
+        findings: list[Finding], threshold: float, exclude: list[str]
+    ) -> list[Finding]:
+        filtered: list[Finding] = []
+        for f in findings:
+            if threshold > 0 and f.confidence.value in _CONF_WEIGHTS:
+                if _CONF_WEIGHTS[f.confidence.value] < threshold:
+                    continue
+            if exclude and f.field_path:
+                if any(f.field_path.startswith(e) for e in exclude):
+                    continue
+            filtered.append(f)
+        return filtered
+
+    def compute_risk_score(self, findings: list[Finding]) -> float:
         weights = {
             Severity.CRITICAL: 25,
             Severity.HIGH: 15,

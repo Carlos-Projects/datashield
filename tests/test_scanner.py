@@ -106,12 +106,12 @@ class TestScanner:
             for _ in range(3)
         ]
         scanner = Scanner()
-        score = scanner._compute_risk_score(findings)
+        score = scanner.compute_risk_score(findings)
         assert score >= 70
 
     async def test_risk_score_safe(self):
         scanner = Scanner()
-        score = scanner._compute_risk_score([])
+        score = scanner.compute_risk_score([])
         assert score == 0.0
 
     async def test_risk_category_mapping(self):

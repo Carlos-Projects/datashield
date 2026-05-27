@@ -35,7 +35,7 @@ dependencies = [
     "jinja2>=3.1.0,<4.0.0",
     "httpx>=0.27.0,<1.0.0",
     "numpy>=1.24.0,<2.0.0",
-    "regex>=2023.0.0,<2024.0.0",
+    "regex>=2023.0.0,<2026.0.0",
     "pyyaml>=6.0,<7.0.0",
 ]
 
@@ -46,6 +46,8 @@ dev = [
     "pytest-cov>=5.0.0",
     "ruff>=0.6.0",
     "mypy>=1.11.0",
+    "bandit>=1.7.0",
+    "safety>=2.0.0",
 ]
 presidio = [
     "presidio-analyzer>=2.2.0",
@@ -92,3 +94,14 @@ exclude = ["tests/"]
 
 [tool.coverage.run]
 source = ["datashield"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

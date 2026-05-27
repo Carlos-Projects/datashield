@@ -7,7 +7,7 @@ class DataShieldSettings(BaseSettings):
     model_config = {
         "env_prefix": "DATASHIELD_",
         "env_file": ".env",
-        "extra": "ignore",
+        "extra": "forbid",
     }
 
     debug: bool = False
@@ -17,7 +17,7 @@ class DataShieldSettings(BaseSettings):
     default_k: int = 5
     mcpscop_url: str | None = None
     mcpscop_api_key: str | None = None
-    scan_dir: str = "."
+    max_size_mb: int = 500
 
 
 settings = DataShieldSettings()

@@ -4,11 +4,24 @@ from typing import Any
 
 
 class KAnonymity:
-    def __init__(self, k: int = 5, quasi_identifiers: list[str] | None = None):
+    def __init__(
+        self,
+        k: int = 5,
+        quasi_identifiers: list[str] | None = None,
+        generalization_buckets: list[tuple[float, float, str]] | None = None,
+    ):
         if k < 2:
             raise ValueError("k must be >= 2")
         self.k = k
         self.quasi_identifiers = quasi_identifiers or []
+        self.generalization_buckets = generalization_buckets or [
+            (0, 17, "0-17"),
+            (18, 29, "18-29"),
+            (30, 44, "30-44"),
+            (45, 59, "45-59"),
+            (60, 74, "60-74"),
+            (75, float("inf"), "75+"),
+        ]
 
     def apply(self, data: list[dict[str, Any]]) -> dict[str, Any]:
         if not data:
@@ -86,14 +99,7 @@ class KAnonymity:
         return value
 
     def _generalize_number(self, value: float) -> str:
-        if value < 18:
-            return "0-17"
-        if value < 30:
-            return "18-29"
-        if value < 45:
-            return "30-44"
-        if value < 60:
-            return "45-59"
-        if value < 75:
-            return "60-74"
-        return "75+"
+        for lo, hi, label in self.generalization_buckets:
+            if lo <= value <= hi:
+                return label
+        return f"{value:.0f}+"
