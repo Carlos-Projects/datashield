@@ -75,7 +75,7 @@ class MCPGuardPolicyGenerator:
         else:
             rate_limit_val = 100
 
-        self.policy = MCPGuardPolicy(
+        policy = MCPGuardPolicy(
             target_url=target_url,
             deny=sorted(deny_tools),
             allow=sorted(allow_tools),
@@ -89,7 +89,7 @@ class MCPGuardPolicyGenerator:
                 "severity_summary": {str(k): v for k, v in severity_map.items()},
             },
         )
-        return self.policy
+        return policy
 
     def from_scan_report(
         self, report: ScanReport, target_url: str = "http://localhost:8000"

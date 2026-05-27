@@ -24,6 +24,6 @@ class TestGDPRCompliance:
 
     def test_verify_with_special_categories(self):
         gdpr = GDPRCompliance()
-        data = [{"diagnosis": "diabetes"}]
+        data = [{"notes": "diagnosis: diabetes"}]
         result = gdpr.verify(data)
         assert len(result.violations) >= 1

@@ -26,7 +26,7 @@ class CryptoUtils:
 
     @staticmethod
     def generate_key(length: int = 32) -> str:
-        return base64.b64encode(os.urandom(length)).decode("utf-8")
+        return base64.urlsafe_b64encode(os.urandom(length)).decode("utf-8")
 
     @staticmethod
     def hmac_sign(value: str, key: str) -> str:

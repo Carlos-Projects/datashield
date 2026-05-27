@@ -260,6 +260,10 @@ class SensitiveClassifier(BaseDetector):
             elif isinstance(value, str):
                 classified = self._classify_value(key, value)
                 findings.extend(self._make_findings(classified, field_path, value))
+            else:
+                str_val = str(value)
+                classified = self._classify_value(key, str_val)
+                findings.extend(self._make_findings(classified, field_path, str_val))
         return findings
 
     def _classify_value(self, key: str, value: str) -> list[tuple[DataCategory, float]]:

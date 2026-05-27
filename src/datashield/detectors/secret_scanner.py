@@ -255,11 +255,11 @@ _SECRET_PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]]
     ),
     (
         "hashicorp_token",
-        r"(?i)[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
-        Severity.HIGH,
-        Confidence.MEDIUM,
+        r"(?i)(?:token|vault|consul|nomad)\s*[=:]\s*['\"]?[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}['\"]?",
+        Severity.MEDIUM,
+        Confidence.LOW,
         DataCategory.CREDENTIAL,
-        "Potential UUID-based token",
+        "Potential HashiCorp token",
     ),
     (
         "otp_secret",

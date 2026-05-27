@@ -24,14 +24,25 @@ from datashield.scanner import (
 
 _CONF_WEIGHTS = {"high": 0.8, "medium": 0.5, "low": 0.2}
 _CSV_FORMULA_PREFIXES = ("=", "+", "-", "@")
+_QUIET = False
 
 
 def _version_callback(value: bool) -> None:
     if value:
         from datashield import __version__ as ver
 
-        console.print(f"DataShield v{ver}")
+        _print(f"DataShield v{ver}")
         raise typer.Exit()
+
+
+def _quiet_callback(value: bool) -> None:
+    global _QUIET  # noqa: PLW0603
+    _QUIET = value
+
+
+def _print(*args: Any, **kwargs: Any) -> None:
+    if not _QUIET:
+        Console().print(*args, **kwargs)
 
 
 def _main_callback(
@@ -41,6 +52,14 @@ def _main_callback(
         "-V",
         help="Show version and exit",
         callback=_version_callback,
+        is_eager=True,
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        "-q",
+        help="Suppress all non-error output",
+        callback=_quiet_callback,
         is_eager=True,
     ),
 ) -> None:
@@ -60,7 +79,7 @@ def _check_file_size(path: str, max_mb: int) -> None:
     size = Path(path).stat().st_size
     max_bytes = max_mb * 1024 * 1024
     if size > max_bytes:
-        console.print(
+        _print(
             f"[red]File too large:[/red] {size / 1024 / 1024:.1f} MB "
             f"(max {max_mb} MB). Use --max-size to increase."
         )
@@ -78,7 +97,7 @@ def _load_data(
 ) -> list[dict[str, Any]]:
     p = Path(path)
     if not p.exists():
-        console.print(f"[red]File not found:[/red] {path}")
+        _print(f"[red]File not found:[/red] {path}")
         raise typer.Exit(1)
 
     ext = (fmt or p.suffix).lstrip(".").lower()
@@ -86,7 +105,7 @@ def _load_data(
     try:
         raw = p.read_text(encoding="utf-8")
     except UnicodeDecodeError:
-        console.print(f"[red]File is not valid UTF-8 text:[/red] {path}")
+        _print(f"[red]File is not valid UTF-8 text:[/red] {path}")
         raise typer.Exit(1) from None
 
     if ext in ("csv",):
@@ -104,13 +123,13 @@ def _load_json(raw: str) -> list[dict[str, Any]]:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        console.print(f"[red]Invalid JSON:[/red] {e}")
+        _print(f"[red]Invalid JSON:[/red] {e}")
         raise typer.Exit(1) from e
     if isinstance(data, dict):
         return [data]
     if isinstance(data, list):
         return data
-    console.print("[red]Unsupported JSON format. Expected object or array.[/red]")
+    _print("[red]Unsupported JSON format. Expected object or array.[/red]")
     raise typer.Exit(1)
 
 
@@ -123,7 +142,7 @@ def _load_jsonl(raw: str) -> list[dict[str, Any]]:
         try:
             records.append(json.loads(line))
         except json.JSONDecodeError as e:
-            console.print(f"[red]Invalid JSONL line {i}:[/red] {e}")
+            _print(f"[red]Invalid JSONL line {i}:[/red] {e}")
             raise typer.Exit(1) from e
     return records
 
@@ -170,9 +189,9 @@ async def _send_to_mcpscop(report: ScanReport, url: str, api_key: str | None) ->
     client = MCPscopClient(url, api_key)
     try:
         await client.send_report(report)
-        console.print("[blue]Report forwarded to MCPscop[/blue]")
+        _print("[blue]Report forwarded to MCPscop[/blue]")
     except Exception as e:
-        console.print(f"[yellow]Failed to send to MCPscop:[/yellow] {e}")
+        _print(f"[yellow]Failed to send to MCPscop:[/yellow] {e}")
     finally:
         await client.close()
 
@@ -325,7 +344,7 @@ def sanitize(
         ),
         encoding="utf-8",
     )
-    console.print(f"[green]Sanitized data written to:[/green] {output}")
+    _print(f"[green]Sanitized data written to:[/green] {output}")
     if mcpscop and settings.mcpscop_url:
         asyncio.run(_send_to_mcpscop(scan_report, settings.mcpscop_url, settings.mcpscop_api_key))
     if report_output:
@@ -375,7 +394,7 @@ def anonymize(
         ),
         encoding="utf-8",
     )
-    console.print(f"[green]Anonymized data written to:[/green] {output}")
+    _print(f"[green]Anonymized data written to:[/green] {output}")
     if report_output:
         reporter = ConsoleReporter()
         reporter.report_anonymization(
@@ -455,7 +474,7 @@ def policies(
     gen = MCPGuardPolicyGenerator()
     policy = gen.from_scan_report(scan_report, target_url=target_url)
     gen.save(output, policy)
-    console.print(f"[green]MCPGuard policy written to:[/green] {output}")
+    _print(f"[green]MCPGuard policy written to:[/green] {output}")
 
 
 def _render_report(report: ScanReport, format: str, output: str | None = None) -> None:
@@ -469,9 +488,9 @@ def _render_report(report: ScanReport, format: str, output: str | None = None) -
         return
     if output and result is not None:
         Path(output).write_text(result, encoding="utf-8")
-        console.print(f"[green]Report written to:[/green] {output}")
+        _print(f"[green]Report written to:[/green] {output}")
     elif result is not None:
-        console.print(result)
+        _print(result)
 
 
 def main() -> None:

@@ -165,9 +165,9 @@ _PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]] = [
     ),
     (
         "credit_card_cvv",
-        r"\b\d{3,4}\b",
+        r"(?i)(?:cvv|cvc|cvv2|cvc2|card_code|security_code)\s*[=:]\s*['\"]?\d{3,4}['\"]?",
         Severity.LOW,
-        Confidence.LOW,
+        Confidence.MEDIUM,
         DataCategory.FINANCIAL,
         "Potential CVV detected",
     ),

@@ -256,6 +256,57 @@ DataShield helps verify compliance with:
 - [arXiv:2605.25002](https://arxiv.org/abs/2605.25002) — Verifiable Secure Aggregation via Dual Servers with Linear Tags
 - [arXiv:2605.26019](https://arxiv.org/abs/2605.26019) — Retrieval-Augmented Detection of Potentially Abusive Clauses
 
+## Troubleshooting
+
+### "mcp_taxonomy is required" error
+
+The taxonomy adapter requires `mcp-taxonomy`. Install it with:
+
+```bash
+pip install datashield-ai[taxonomy]
+```
+
+If you don't need taxonomy integration, this error means you're calling
+`datashield_finding_to_taxonomy()` directly — the CLI commands work without it.
+
+### Presidio not found
+
+Presidio-based PII detection requires:
+
+```bash
+pip install datashield-ai[presidio]
+```
+
+This downloads models (~500 MB) on first use.
+
+### Large files causing memory errors
+
+DataShield loads the entire file into memory. For files >500 MB, set:
+
+```bash
+export DATASHIELD_MAX_SIZE_MB=1000
+```
+
+Or pass `--max-size` if available. Streaming support is planned for a future release.
+
+### How to interpret risk scores
+
+| Score | Category | Meaning |
+|-------|----------|---------|
+| 70+ | Critical | High-risk data (credentials, keys) present |
+| 40-69 | High | PII/secrets detected, immediate action needed |
+| 20-39 | Medium | Some sensitive fields found |
+| 5-19 | Low | Minor privacy concerns |
+| <5 | Safe | No significant risks detected |
+
+### Getting help
+
+```bash
+datashield --help          # Top-level help
+datashield scan --help     # Help for a specific command
+datashield --version       # Show version
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE)

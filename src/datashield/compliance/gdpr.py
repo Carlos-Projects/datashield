@@ -87,10 +87,13 @@ class GDPRCompliance:
             )
             violations.append("Art. 17: Implement right to erasure capability")
 
-        encryption_check = self._check_encryption(data)
-        checks.append(encryption_check)
-        if not encryption_check["passed"]:
-            violations.append("Art. 32: Data should be encrypted at rest and in transit")
+        checks.append(
+            {
+                "article": "art_32",
+                "check": "Encryption status must be verified externally — user must self-certify",
+                "passed": "depends_on_user_certification",
+            }
+        )
 
         pii_count = sum(1 for f in findings if f.category == DataCategory.PII)
         if pii_count > 0:
@@ -120,19 +123,8 @@ class GDPRCompliance:
             return []
 
     def _check_encryption(self, data: list[dict[str, Any]]) -> dict[str, Any]:
-        for record in data:
-            for value in record.values():
-                if isinstance(value, str) and len(value) > 20:
-                    has_mixed = any(c.isupper() for c in value) and any(c.islower() for c in value)
-                    has_digits = any(c.isdigit() for c in value)
-                    if has_mixed and has_digits and len(value) > 30:
-                        return {
-                            "article": "art_32",
-                            "check": "Potential encrypted/hashed data detected",
-                            "passed": True,
-                        }
         return {
             "article": "art_32",
-            "check": "Verify encryption status - no encrypted fields detected",
-            "passed": False,
+            "check": "Encryption status must be verified externally — user must self-certify",
+            "passed": "depends_on_user_certification",
         }
