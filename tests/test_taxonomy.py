@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from mcp_taxonomy.core import (
-    AttackCategory,
-    DetectionMethod,
-    TaxonomyEvent,
-)
+import pytest
+
+try:
+    from mcp_taxonomy.core import AttackCategory, DetectionMethod, TaxonomyEvent
+
+    _HAS_MCP_TAXONOMY = True
+except ImportError:
+    _HAS_MCP_TAXONOMY = False
 
 from datashield.scanner import (
     Confidence,
@@ -16,6 +19,7 @@ from datashield.scanner import (
 from datashield.taxonomy import datashield_finding_to_taxonomy
 
 
+@pytest.mark.skipif(not _HAS_MCP_TAXONOMY, reason="mcp-taxonomy not installed")
 class TestTaxonomyAdapter:
     def test_pii_finding_to_taxonomy(self):
         finding = Finding(

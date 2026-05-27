@@ -5,7 +5,6 @@ from typing import Any
 import httpx
 
 from datashield.scanner import ScanReport
-from datashield.taxonomy import datashield_finding_to_taxonomy
 
 
 class MCPscopClient:
@@ -15,6 +14,8 @@ class MCPscopClient:
         self._client = httpx.AsyncClient(timeout=30.0)
 
     async def send_report(self, report: ScanReport) -> dict[str, Any]:
+        from datashield.taxonomy import datashield_finding_to_taxonomy
+
         events = []
         for finding in report.findings:
             event = datashield_finding_to_taxonomy(finding)

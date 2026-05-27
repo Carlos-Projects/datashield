@@ -3,6 +3,13 @@ from __future__ import annotations
 import httpx
 import pytest
 
+try:
+    from mcp_taxonomy.core import TaxonomyEvent  # noqa: F401
+
+    _HAS_MCP_TAXONOMY = True
+except ImportError:
+    _HAS_MCP_TAXONOMY = False
+
 from datashield.integrations.mcpscop import MCPscopClient
 from datashield.scanner import (
     Confidence,
@@ -45,6 +52,7 @@ class TestMCPscopClient:
             await client.send_report(report)
         await client.close()
 
+    @pytest.mark.skipif(not _HAS_MCP_TAXONOMY, reason="mcp-taxonomy not installed")
     def test_event_shape(self):
         from datashield.taxonomy import datashield_finding_to_taxonomy
 

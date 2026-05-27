@@ -8,7 +8,11 @@ from datashield.privacy import DifferentialPrivacy, EpsilonCalculator, KAnonymit
 from datashield.reporters import ConsoleReporter, HTMLReporter, JSONReporter
 from datashield.sanitizers import Anonymizer, Minimizer, Redactor, Transformer
 from datashield.scanner import Confidence, DataCategory, Finding, Scanner, ScanReport, Severity
-from datashield.taxonomy import datashield_finding_to_taxonomy
+
+try:
+    from datashield.taxonomy import datashield_finding_to_taxonomy
+except ImportError:
+    datashield_finding_to_taxonomy = None
 
 __all__ = [
     "app",
@@ -35,7 +39,6 @@ __all__ = [
     "ConsoleReporter",
     "JSONReporter",
     "HTMLReporter",
-    "datashield_finding_to_taxonomy",
     "DataShieldSettings",
     "settings",
 ]

@@ -1,64 +1,80 @@
 from __future__ import annotations
 
-from mcp_taxonomy.core import (
-    AttackCategory,
-    Confidence,
-    DetectionMethod,
-    TaxonomyEvent,
-    severity_weight,
-)
-
 from datashield.scanner import DataCategory, DetectorType, Finding, Severity
 
-_DATASHIELD_CATEGORY_MAP: dict[DataCategory, AttackCategory] = {
-    DataCategory.PII: AttackCategory.INJECTION,
-    DataCategory.SECRET: AttackCategory.POLICY_VIOLATION,
-    DataCategory.MEDICAL: AttackCategory.POLICY_VIOLATION,
-    DataCategory.LEGAL: AttackCategory.POLICY_VIOLATION,
-    DataCategory.CREDENTIAL: AttackCategory.TOOL_POISONING,
-    DataCategory.FINANCIAL: AttackCategory.POLICY_VIOLATION,
-    DataCategory.LOCATION: AttackCategory.ANOMALY,
-    DataCategory.PERSONAL: AttackCategory.POLICY_VIOLATION,
-    DataCategory.CONTACT: AttackCategory.ANOMALY,
-    DataCategory.OTHER: AttackCategory.ANOMALY,
+try:
+    from mcp_taxonomy.core import (
+        AttackCategory,
+        Confidence as TaxonomyConfidence,
+        DetectionMethod,
+        TaxonomyEvent,
+        severity_weight,
+    )
+
+    _HAS_MCP_TAXONOMY = True
+except ImportError:
+    _HAS_MCP_TAXONOMY = False
+    AttackCategory = None
+    TaxonomyConfidence = None
+    DetectionMethod = None
+    TaxonomyEvent = None
+    severity_weight = lambda s: 0
+
+_CATEGORY_MAP: dict[DataCategory, str] = {
+    DataCategory.PII: "injection",
+    DataCategory.SECRET: "policy_violation",
+    DataCategory.MEDICAL: "policy_violation",
+    DataCategory.LEGAL: "policy_violation",
+    DataCategory.CREDENTIAL: "tool_poisoning",
+    DataCategory.FINANCIAL: "policy_violation",
+    DataCategory.LOCATION: "anomaly",
+    DataCategory.PERSONAL: "policy_violation",
+    DataCategory.CONTACT: "anomaly",
+    DataCategory.OTHER: "anomaly",
 }
 
-_DATASHIELD_DETECTOR_MAP: dict[DetectorType, DetectionMethod] = {
-    DetectorType.PII: DetectionMethod.HIDDEN_TEXT,
-    DetectorType.SECRET: DetectionMethod.INJECTION_PATTERNS,
-    DetectorType.CLASSIFIER: DetectionMethod.INSTRUCTION_CLASSIFIER,
-    DetectorType.PATTERN: DetectionMethod.INJECTION_PATTERNS,
+_DETECTOR_MAP: dict[DetectorType, str] = {
+    DetectorType.PII: "hidden_text",
+    DetectorType.SECRET: "injection_patterns",
+    DetectorType.CLASSIFIER: "instruction_classifier",
+    DetectorType.PATTERN: "injection_patterns",
 }
 
-_DATASHIELD_CONFIDENCE_MAP: dict[str, Confidence] = {
-    "high": Confidence.HIGH,
-    "medium": Confidence.MEDIUM,
-    "low": Confidence.LOW,
+_CONFIDENCE_MAP: dict[str, str] = {
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
 }
 
 
 def datashield_finding_to_taxonomy(finding: Finding | dict) -> TaxonomyEvent:
+    if not _HAS_MCP_TAXONOMY:
+        raise ImportError(
+            "mcp_taxonomy is required for taxonomy conversion. "
+            "Install it with: pip install datashield-ai[taxonomy]"
+        )
     if isinstance(finding, dict):
         finding_obj = Finding(**finding)
     else:
         finding_obj = finding
 
-    category = _DATASHIELD_CATEGORY_MAP.get(finding_obj.category, AttackCategory.ANOMALY)
-    detector = _DATASHIELD_DETECTOR_MAP.get(
-        finding_obj.detector_type, DetectionMethod.INJECTION_PATTERNS
-    )
+    category_str = _CATEGORY_MAP.get(finding_obj.category, "anomaly")
+    category = AttackCategory(category_str)
+    detector_str = _DETECTOR_MAP.get(finding_obj.detector_type, "injection_patterns")
+    detector = DetectionMethod(detector_str)
     ds_sev = (
         finding_obj.severity.value
         if isinstance(finding_obj.severity, Severity)
         else str(finding_obj.severity)
     )
     severity = Severity(ds_sev) if ds_sev in {s.value for s in Severity} else Severity.MEDIUM
-    confidence = _DATASHIELD_CONFIDENCE_MAP.get(
+    confidence_str = _CONFIDENCE_MAP.get(
         finding_obj.confidence.value
         if hasattr(finding_obj.confidence, "value")
         else str(finding_obj.confidence),
-        Confidence.MEDIUM,
+        "medium",
     )
+    confidence = TaxonomyConfidence(confidence_str)
 
     return TaxonomyEvent(
         source="datashield",
