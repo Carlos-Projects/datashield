@@ -3,10 +3,11 @@
 **Privacy-preserving data sanitization for AI training.**
 
 [![CI](https://github.com/Carlos-Projects/datashield/actions/workflows/ci.yml/badge.svg)](https://github.com/Carlos-Projects/datashield/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/datashield-ai.svg)](https://pypi.org/project/datashield-ai/)
+[![PyPI version](https://img.shields.io/pypi/v/datashield-ai.svg?label=PyPI)](https://pypi.org/project/datashield-ai/)
 [![Python versions](https://img.shields.io/pypi/pyversions/datashield-ai.svg)](https://pypi.org/project/datashield-ai/)
 [![License](https://img.shields.io/github/license/Carlos-Projects/datashield.svg)](https://github.com/Carlos-Projects/datashield/blob/main/LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](tests/)
 
 DataShield detects and removes sensitive information (PII, secrets, medical, financial data) from datasets before fine-tuning or RAG. It implements anonymization, differential privacy, and data minimization techniques.
 
@@ -238,7 +239,7 @@ datashield/
 │   │   └── mcpscop.py       # MCPscop webhook client
 │   └── utils/
 │       └── crypto.py        # Cryptographic utilities
-└── tests/                   # 150+ tests
+└── tests/                   # 202+ tests (92% coverage)
 ```
 
 ## Compliance
