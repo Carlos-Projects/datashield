@@ -32,6 +32,7 @@ class TestMCPscopClient:
         assert client.base_url == "http://test:8080"
 
     @pytest.mark.asyncio
+    @pytest.mark.skipif(not _HAS_MCP_TAXONOMY, reason="mcp-taxonomy not installed")
     async def test_send_report_connection_error(self):
         client = MCPscopClient("http://localhost:1")
         report = ScanReport(
