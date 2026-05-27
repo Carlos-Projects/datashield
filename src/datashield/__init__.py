@@ -12,7 +12,7 @@ from datashield.scanner import Confidence, DataCategory, Finding, Scanner, ScanR
 try:
     from datashield.taxonomy import datashield_finding_to_taxonomy
 except ImportError:
-    datashield_finding_to_taxonomy = None
+    datashield_finding_to_taxonomy = None  # type: ignore[assignment]
 
 __all__ = [
     "app",
