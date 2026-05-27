@@ -6,7 +6,7 @@ DataShield is a security tool that handles sensitive data. If you discover a sec
 
 **Do not report security vulnerabilities through public GitHub issues.**
 
-Instead, email **carlos@carlosrocha.dev** with:
+Instead, email **Carlos@AIAgentObservatory.org** with:
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact

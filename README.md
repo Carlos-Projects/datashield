@@ -313,4 +313,4 @@ MIT — see [LICENSE](LICENSE)
 
 ## Author
 
-**Carlos Rocha** — [carlos@carlosrocha.dev](mailto:carlos@carlosrocha.dev)
+**Carlos-Projects** — [Carlos@AIAgentObservatory.org](mailto:Carlos@AIAgentObservatory.org)
