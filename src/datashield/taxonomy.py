@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from datashield.scanner import DataCategory, DetectorType, Finding, Severity
 
-try:
+try:  # noqa: I001
     from mcp_taxonomy.core import (
         AttackCategory,
-        Confidence as TaxonomyConfidence,
         DetectionMethod,
         TaxonomyEvent,
         severity_weight,
+    )
+    from mcp_taxonomy.core import (
+        Confidence as TaxonomyConfidence,
     )
 
     _HAS_MCP_TAXONOMY = True
@@ -18,7 +20,10 @@ except ImportError:
     TaxonomyConfidence = None
     DetectionMethod = None
     TaxonomyEvent = None
-    severity_weight = lambda s: 0
+
+    def severity_weight(s: Severity) -> int:
+        return 0
+
 
 _CATEGORY_MAP: dict[DataCategory, str] = {
     DataCategory.PII: "injection",
