@@ -1,0 +1,30 @@
+# Auto-detect text vs binary
+* text=auto
+
+# Source
+*.py text diff=python
+*.pyi text diff=python
+*.toml text
+*.yml text
+*.yaml text
+*.cfg text
+*.ini text
+*.json text
+*.md text
+*.rst text
+*.css text
+*.html text
+*.env text
+*.gitignore text
+
+# Explicitly binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.tar.gz binary
+*.whl binary
+
+# Line endings
+*.sh text eol=lf
+*.bat text eol=crlf
