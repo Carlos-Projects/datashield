@@ -175,6 +175,8 @@ _PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]] = [
 
 
 class PatternMatcher(BaseDetector):
+    """Detects sensitive data using regex patterns with ReDoS protection (atomic groups + timeout)."""
+
     name = "pattern_matcher"
     detector_type = DetectorType.PATTERN
 

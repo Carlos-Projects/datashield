@@ -35,6 +35,8 @@ Thumbs.db
 # Project specific
 output/
 reports/
-*.html
 *.log
 .coverage*
+
+# Docs
+docs/_build/

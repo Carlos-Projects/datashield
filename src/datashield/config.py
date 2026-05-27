@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 
 
 class DataShieldSettings(BaseSettings):
+    """Application settings loaded from environment variables (.env or DATASHIELD_*)."""
+
     model_config = {
         "env_prefix": "DATASHIELD_",
         "env_file": ".env",

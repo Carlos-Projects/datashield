@@ -9,6 +9,8 @@ from typing import Any
 
 
 class CryptoUtils:
+    """Static utility methods for hashing, anonymization, and cryptographic operations."""
+
     @staticmethod
     def hash_string(value: str, algorithm: str = "sha256") -> str:
         h = hashlib.new(algorithm)

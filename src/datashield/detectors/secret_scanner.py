@@ -281,6 +281,8 @@ _SECRET_PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]]
 
 
 class SecretScanner(BaseDetector):
+    """Detects secrets and credentials (API keys, tokens, passwords, certificates, private keys)."""
+
     name = "secret_scanner"
     detector_type = DetectorType.SECRET
 

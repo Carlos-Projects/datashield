@@ -48,6 +48,10 @@ dev = [
     "mypy>=1.11.0",
     "bandit>=1.7.0",
     "safety>=2.0.0",
+    "sphinx>=7.0",
+    "furo>=2024.0",
+    "nox>=2024.0",
+    "pre-commit>=3.0",
 ]
 presidio = [
     "presidio-analyzer>=2.2.0",

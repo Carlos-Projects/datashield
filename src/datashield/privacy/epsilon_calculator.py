@@ -7,6 +7,8 @@ import numpy as np
 
 
 class EpsilonCalculator:
+    """Estimates a recommended privacy budget (epsilon) based on dataset characteristics."""
+
     def __init__(self, default_epsilon: float = 1.0):
         self.default_epsilon = default_epsilon
 

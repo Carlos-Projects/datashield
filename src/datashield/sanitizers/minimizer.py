@@ -17,6 +17,8 @@ _KEEP_FIELDS = {"id", "uuid", "user_id", "timestamp", "created_at", "updated_at"
 
 
 class Minimizer(BaseSanitizer):
+    """Removes sensitive fields from records, keeping only necessary identifiers."""
+
     name = "minimizer"
 
     def __init__(

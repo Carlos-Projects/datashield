@@ -11,6 +11,8 @@ console = Console()
 
 
 class ConsoleReporter:
+    """Renders scan reports, anonymization summaries, and compliance results to the terminal using Rich."""
+
     def render(self, report: ScanReport) -> None:
         self._render_summary(report)
         self._render_findings(report)

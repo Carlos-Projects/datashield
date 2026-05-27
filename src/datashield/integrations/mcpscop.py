@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class MCPscopClient:
+    """Async HTTP client that forwards normalized findings to an MCPscop dashboard."""
+
     def __init__(self, base_url: str, api_key: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key

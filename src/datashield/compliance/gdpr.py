@@ -6,6 +6,8 @@ from datashield.scanner import ComplianceResult, DataCategory, Finding
 
 
 class GDPRCompliance:
+    """Checks dataset compliance with GDPR Articles 5, 9, 17, 25, 32, 35."""
+
     name = "GDPR"
     ARTICLES: dict[str, str] = {
         "art_5": "Personal data shall be processed lawfully, fairly and transparently",

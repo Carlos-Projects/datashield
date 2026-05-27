@@ -6,6 +6,8 @@ from datashield.scanner import ComplianceResult
 
 
 class ComplianceVerifier:
+    """Runs all compliance checks (GDPR, HIPAA) and compares original vs sanitized datasets."""
+
     def __init__(self) -> None:
         self._results: list[ComplianceResult] = []
 

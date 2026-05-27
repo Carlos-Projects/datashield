@@ -18,6 +18,8 @@ _TRANSFORM_FUNCTIONS: dict[DataCategory, Callable[[str], str]] = {
 
 
 class Transformer(BaseSanitizer):
+    """Applies category-specific transformations (hashing, masking, redaction) to sensitive values."""
+
     name = "transformer"
 
     def __init__(

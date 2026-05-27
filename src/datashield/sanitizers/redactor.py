@@ -6,6 +6,8 @@ from datashield.scanner import BaseSanitizer, Finding, SanitizedRecord
 
 
 class Redactor(BaseSanitizer):
+    """Replaces sensitive field values with a configurable redaction token (default [REDACTED])."""
+
     name = "redactor"
 
     def __init__(self, redaction_token: str = "[REDACTED]"):

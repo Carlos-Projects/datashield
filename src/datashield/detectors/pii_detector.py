@@ -153,6 +153,8 @@ _PII_PATTERNS: list[tuple[str, str, Severity, Confidence, DataCategory, str]] = 
 
 
 class PIIDetector(BaseDetector):
+    """Detects PII fields (email, phone, SSN, passport, driver license, national ID, etc.) via pattern matching."""
+
     name = "pii_detector"
     detector_type = DetectorType.PII
 

@@ -7,6 +7,8 @@ from datashield.scanner import ScanReport
 
 
 class JSONReporter:
+    """Serializes scan reports to JSON for programmatic consumption."""
+
     def render(self, report: ScanReport) -> str:
         return json.dumps(self._serialize(report), indent=2, default=str)
 

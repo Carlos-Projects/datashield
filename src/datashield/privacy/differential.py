@@ -8,6 +8,8 @@ import numpy as np
 
 
 class DifferentialPrivacy:
+    """Adds calibrated Laplace or Gaussian noise to numeric and string data for differential privacy."""
+
     def __init__(
         self,
         epsilon: float = 1.0,

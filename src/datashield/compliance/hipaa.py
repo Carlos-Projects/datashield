@@ -28,6 +28,8 @@ _HIPAA_IDENTIFIERS: set[str] = {
 
 
 class HIPAACompliance:
+    """Checks dataset compliance with HIPAA Privacy Rule, Security Rule, and Minimum Necessary standard."""
+
     name = "HIPAA"
     RULES: dict[str, str] = {
         "privacy_rule": "Protected Health Information (PHI) must be safeguarded",

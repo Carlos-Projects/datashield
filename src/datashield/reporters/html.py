@@ -90,6 +90,8 @@ footer { text-align: center; color: #999; font-size: 0.8rem; margin-top: 2rem; p
 
 
 class HTMLReporter:
+    """Renders scan reports as styled HTML pages with severity cards and finding details."""
+
     def render(self, report: ScanReport) -> str:
         severity_colors = {
             "critical": "#ff4444",

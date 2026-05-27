@@ -7,6 +7,8 @@ from datashield.scanner import BaseSanitizer, Finding, SanitizedRecord
 
 
 class Anonymizer(BaseSanitizer):
+    """Replaces sensitive values with deterministic anonymized tokens (ANON_prefix_hash)."""
+
     name = "anonymizer"
 
     def __init__(self) -> None:

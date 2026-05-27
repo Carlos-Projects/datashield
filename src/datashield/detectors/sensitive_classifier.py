@@ -219,6 +219,8 @@ _PERSONAL_KEYWORDS: set[str] = {
 
 
 class SensitiveClassifier(BaseDetector):
+    """Classifies sensitive data by keyword matching across medical, financial, legal, personal categories."""
+
     name = "sensitive_classifier"
     detector_type = DetectorType.CLASSIFIER
 

@@ -185,11 +185,11 @@ class TestCLI:
 
     def test_load_data_csv_formula_injection(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
-            f.write('name,notes\nAlice,"=HYPERLINK(""http://evil.com"")"\nBob,+SUM(1,1)\n')
+            f.write('name,notes\nAlice,"=HYPERLINK(""http://evil.com"")"\nBob,"+SUM(1,1)"\n')
             path = f.name
         data = _load_data(path)
-        assert "=HYPERLINK" in data[0]["notes"]
-        assert "+SUM" in data[1]["notes"]
+        assert data[0]["notes"] == '\'=HYPERLINK("http://evil.com")'
+        assert data[1]["notes"] == "'+SUM(1,1)"
         Path(path).unlink(missing_ok=True)
 
     def test_scan_with_all_detectors_disabled(self, sample_json):
@@ -210,7 +210,41 @@ class TestCLI:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write("name,email\nAlice,alice@test.com\nBob,bob@test.com\n")
             path = f.name
-        runner.invoke(app, ["sanitize", path, path + ".out"])
+        result = runner.invoke(app, ["sanitize", path, path + ".out"])
+        assert result.exit_code == 0
         assert Path(path + ".out").exists()
         Path(path + ".out").unlink(missing_ok=True)
         Path(path).unlink(missing_ok=True)
+
+    def test_full_pipeline_integration(self):
+        import json
+        import tempfile
+
+        data = [
+            {"name": "Alice", "email": "alice@test.com", "ssn": "123-45-6789"},
+            {"name": "Bob", "email": "bob@test.com", "api_key": "AKIAIOSFODNN7EXAMPLE"},
+        ]
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(data, f)
+            src = f.name
+        out = src + ".sanitized.json"
+        rpt = src + ".report.html"
+
+        result = runner.invoke(app, ["sanitize", src, out, "--report", rpt, "--format", "html"])
+        assert result.exit_code == 0, result.output
+        assert Path(out).exists()
+        assert Path(rpt).exists()
+
+        with open(out) as f:
+            output = json.load(f)
+        assert output["metadata"]["total_original"] == 2
+        assert output["metadata"]["total_removed"] >= 0
+
+        result2 = runner.invoke(app, ["verify", out])
+        assert result2.exit_code == 0
+
+        result3 = runner.invoke(app, ["report", out, "-o", src + ".report2.html"])
+        assert result3.exit_code == 0
+
+        for p in [src, out, rpt, src + ".report2.html"]:
+            Path(p).unlink(missing_ok=True)

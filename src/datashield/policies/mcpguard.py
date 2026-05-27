@@ -9,6 +9,8 @@ from datashield.scanner import Finding, ScanReport, Severity
 
 
 class MCPGuardPolicy(BaseModel):
+    """MCPGuard-compatible security policy specifying allow/deny rules, rate limits, and blocking behavior."""
+
     mode: str = "http"
     listen_host: str = "127.0.0.1"
     listen_port: int = 8080
@@ -26,6 +28,8 @@ class MCPGuardPolicy(BaseModel):
 
 
 class MCPGuardPolicyGenerator:
+    """Generates MCPGuard YAML policies from scan findings and reports."""
+
     def __init__(self) -> None:
         self.policy = MCPGuardPolicy()
 

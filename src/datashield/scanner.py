@@ -105,6 +105,8 @@ class ComplianceResult(BaseModel):
 
 
 class Scanner:
+    """Core scanning engine that runs detectors and manages findings."""
+
     def __init__(
         self,
         detectors: list[BaseDetector] | None = None,
@@ -184,17 +186,23 @@ class Scanner:
 
 
 class BaseDetector:
+    """Base class for all detectors. Subclass and implement `detect`."""
+
     name: str = "base"
     detector_type: DetectorType = DetectorType.PATTERN
 
     async def detect(self, records: list[dict[str, Any]]) -> list[Finding]:
+        """Run detection on a list of records and return findings."""
         raise NotImplementedError
 
 
 class BaseSanitizer:
+    """Base class for all sanitizers. Subclass and implement `sanitize`."""
+
     name: str = "base"
 
     async def sanitize(
         self, records: list[dict[str, Any]], findings: list[Finding] | None = None
     ) -> list[SanitizedRecord]:
+        """Sanitize records based on findings and return sanitized records."""
         raise NotImplementedError

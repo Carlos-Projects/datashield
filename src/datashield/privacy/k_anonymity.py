@@ -4,6 +4,8 @@ from typing import Any
 
 
 class KAnonymity:
+    """Ensures each record is indistinguishable from at least k-1 others by generalizing quasi-identifiers."""
+
     def __init__(
         self,
         k: int = 5,
