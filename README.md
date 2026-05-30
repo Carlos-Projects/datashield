@@ -8,6 +8,7 @@
 [![License](https://img.shields.io/github/license/Carlos-Projects/datashield.svg)](https://github.com/Carlos-Projects/datashield/blob/main/LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](tests/)
+[![Star History](https://img.shields.io/badge/Star-History-blue?style=social)](https://api.star-history.com/svg?repos=Carlos-Projects/datashield&type=Date)
 
 DataShield detects and removes sensitive information (PII, secrets, medical, financial data) from datasets before fine-tuning or RAG. It implements anonymization, differential privacy, and data minimization techniques.
 
