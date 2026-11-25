@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
       - run: pip install sphinx furo .[dev]
       - run: sphinx-build docs/ docs/_build/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs/_build/
   deploy:
